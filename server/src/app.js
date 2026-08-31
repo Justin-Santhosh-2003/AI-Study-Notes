@@ -9,6 +9,7 @@ const noteRoutes = require('./routes/noteRoutes');
 const flashcardRoutes = require('./routes/flashcardRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const progressRoutes = require('./routes/progressRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/v1/notes', noteRoutes);
 app.use('/api/v1/flashcards', flashcardRoutes);
 app.use('/api/v1/quizzes', quizRoutes);
 app.use('/api/v1/progress', progressRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // 404 Handler
 app.use((req, res) => {
