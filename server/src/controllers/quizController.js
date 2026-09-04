@@ -73,4 +73,25 @@ const getQuizById = async (req, res, next) => {
   }
 };
 
-module.exports = { getQuizzesByNote, saveQuiz, getQuizById };
+// @desc    Get all quizzes for the current user
+// @route   GET /api/v1/quizzes
+// @access  Protected
+const getAllQuizzes = async (req, res, next) => {
+  try {
+    const quizzes = await Quiz.find({ userId: req.user._id })
+      .populate('subjectId', 'name code color')
+      .populate('noteId', 'title')
+      .select('-questions.correctIndex')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: 'success',
+      count: quizzes.length,
+      quizzes,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllQuizzes, getQuizzesByNote, saveQuiz, getQuizById };

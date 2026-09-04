@@ -97,4 +97,27 @@ const getProgressStats = async (req, res, next) => {
   }
 };
 
-module.exports = { submitQuizAttempt, getProgressStats };
+// @desc    Get quiz attempt history for the logged-in user
+// @route   GET /api/v1/progress/history
+// @access  Protected
+const getQuizHistory = async (req, res, next) => {
+  try {
+    const attempts = await QuizAttempt.find({ userId: req.user._id })
+      .populate({
+        path: 'quizId',
+        select: 'title subjectId',
+        populate: { path: 'subjectId', select: 'name code color' },
+      })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: 'success',
+      count: attempts.length,
+      attempts,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { submitQuizAttempt, getProgressStats, getQuizHistory };

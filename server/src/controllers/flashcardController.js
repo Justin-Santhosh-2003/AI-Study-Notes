@@ -79,4 +79,24 @@ const deleteFlashcardSet = async (req, res, next) => {
   }
 };
 
-module.exports = { getFlashcardsByNote, saveFlashcardSet, deleteFlashcardSet };
+// @desc    Get all flashcard sets for the current user
+// @route   GET /api/v1/flashcards
+// @access  Protected
+const getAllFlashcardSets = async (req, res, next) => {
+  try {
+    const sets = await FlashcardSet.find({ userId: req.user._id })
+      .populate('subjectId', 'name code color')
+      .populate('noteId', 'title')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: 'success',
+      count: sets.length,
+      flashcardSets: sets,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllFlashcardSets, getFlashcardsByNote, saveFlashcardSet, deleteFlashcardSet };

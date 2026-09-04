@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 import { getAllNotes, createNote, deleteNote } from '../services/noteService';
 import { getAllSubjects } from '../services/subjectService';
 import { summarizeNote, generateFlashcards, generateQuiz } from '../services/aiService';
-import { FileText, Plus, Trash2, X, Loader2, Brain, Sparkles } from 'lucide-react';
+import { FileText, Plus, Trash2, X, Loader2, Brain, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -199,8 +200,16 @@ export default function NotesPage() {
                         </div>
                       </div>
                     ) : aiResult.type === 'flashcards' ? (
-                      <div className="space-y-2">
-                        <p className="text-xs text-gray-400 mb-2">{aiResult.data.flashcardSet?.cards?.length} flashcards generated & saved</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">{aiResult.data.flashcardSet?.cards?.length} flashcards generated & saved</p>
+                          <Link
+                            to="/flashcards"
+                            className="inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 font-semibold"
+                          >
+                            Open in Flashcards Player <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                         {aiResult.data.flashcardSet?.cards?.slice(0, 3).map((card, i) => (
                           <div key={i} className="p-2 rounded bg-white/5 text-sm">
                             <p className="text-blue-300 font-medium">{card.front}</p>
@@ -212,9 +221,17 @@ export default function NotesPage() {
                         )}
                       </div>
                     ) : aiResult.type === 'quiz' ? (
-                      <div>
-                        <p className="text-xs text-gray-400 mb-2">{aiResult.data.quiz?.questions?.length} questions generated & saved</p>
-                        <p className="text-sm text-gray-300">{aiResult.data.quiz?.title}</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">{aiResult.data.quiz?.questions?.length} questions generated & saved</p>
+                          <Link
+                            to="/quiz"
+                            className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-semibold"
+                          >
+                            Take Quiz Now <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                        <p className="text-sm text-gray-300 font-medium">{aiResult.data.quiz?.title}</p>
                       </div>
                     ) : null}
                   </div>
