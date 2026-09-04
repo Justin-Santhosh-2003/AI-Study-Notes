@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProgressStats } from '../services/progressService';
+import { getPendingTeachers, approveTeacher, rejectTeacher } from '../services/authService';
 import {
   BookOpen,
   FileText,
@@ -12,6 +13,10 @@ import {
   ArrowRight,
   Sparkles,
   TrendingUp,
+  Check,
+  X,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, sub, color }) => (
@@ -50,12 +55,45 @@ const QuickLink = ({ to, icon: Icon, label, description, color }) => (
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [pendingTeachers, setPendingTeachers] = useState([]);
+  const [actionLoading, setActionLoading] = useState('');
 
   useEffect(() => {
     getProgressStats()
       .then((res) => setStats(res.data.stats))
       .catch(() => {});
-  }, []);
+
+    if (user?.role === 'Admin') {
+      getPendingTeachers()
+        .then((res) => setPendingTeachers(res.data.teachers || []))
+        .catch(() => {});
+    }
+  }, [user]);
+
+  const handleApprove = async (id) => {
+    setActionLoading(id);
+    try {
+      await approveTeacher(id);
+      setPendingTeachers((prev) => prev.filter((t) => t._id !== id));
+    } catch {
+      alert('Failed to approve teacher.');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (!window.confirm('Reject and delete this teacher registration?')) return;
+    setActionLoading(id);
+    try {
+      await rejectTeacher(id);
+      setPendingTeachers((prev) => prev.filter((t) => t._id !== id));
+    } catch {
+      alert('Failed to reject teacher.');
+    } finally {
+      setActionLoading('');
+    }
+  };
 
   const totalNotes = stats?.totalNotes ?? 0;
   const totalQuizzes = stats?.totalQuizzesTaken ?? 0;
@@ -81,6 +119,62 @@ export default function Dashboard() {
           <Sparkles className="w-4 h-4" /> Go to Workspace
         </Link>
       </div>
+
+      {/* Admin Panel: Pending Teacher Approvals */}
+      {user?.role === 'Admin' && pendingTeachers.length > 0 && (
+        <div className="glass-panel rounded-2xl p-6 border border-amber-500/30 bg-amber-950/20 space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base">Pending Teacher Approvals</h3>
+                <p className="text-xs text-amber-300/80">
+                  {pendingTeachers.length} teacher{pendingTeachers.length !== 1 ? 's' : ''} awaiting administrator review
+                </p>
+              </div>
+            </div>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+              Action Required
+            </span>
+          </div>
+
+          <div className="divide-y divide-white/5 space-y-3 pt-2">
+            {pendingTeachers.map((teacher) => (
+              <div
+                key={teacher._id}
+                className="pt-3 first:pt-0 flex items-center justify-between flex-wrap gap-3"
+              >
+                <div>
+                  <p className="font-semibold text-white text-sm">{teacher.name}</p>
+                  <p className="text-xs text-gray-400">{teacher.email}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Registered: {new Date(teacher.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleApprove(teacher._id)}
+                    disabled={actionLoading === teacher._id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition disabled:opacity-50"
+                  >
+                    <Check className="w-3.5 h-3.5" /> Approve
+                  </button>
+                  <button
+                    onClick={() => handleReject(teacher._id)}
+                    disabled={actionLoading === teacher._id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 text-xs font-semibold transition disabled:opacity-50"
+                  >
+                    <X className="w-3.5 h-3.5" /> Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hero Learning Recommendation Banner */}
       <div className="glass-panel rounded-2xl p-6 border border-white/10 bg-gradient-to-r from-blue-950/40 via-purple-950/30 to-indigo-950/40 flex flex-col md:flex-row items-center justify-between gap-6">

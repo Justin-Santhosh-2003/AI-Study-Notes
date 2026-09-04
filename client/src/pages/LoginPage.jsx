@@ -30,20 +30,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0b0f17] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="p-3 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30 mb-3">
-            <BookOpen className="w-8 h-8 text-white" />
+      <div className="w-full max-w-lg">
+        {/* Logo & Heading */}
+        <div className="flex flex-col items-center mb-6 text-center">
+          <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-blue-400 mb-3 shadow-inner">
+            <BookOpen className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-white">AI Study Notes</h1>
-          <p className="text-gray-400 text-sm mt-1">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">AI Study Notes</h1>
+          <p className="text-gray-400 text-sm mt-1">Sign in to your study account</p>
         </div>
 
         {/* Card */}
         <div className="glass-panel rounded-2xl p-8">
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+            <div className="mb-5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
               {error}
             </div>
           )}

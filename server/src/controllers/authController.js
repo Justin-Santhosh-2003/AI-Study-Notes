@@ -31,13 +31,31 @@ const signup = async (req, res, next) => {
     // Only allow valid roles; default to Student if not provided
     const allowedRoles = ['Student', 'Teacher', 'Admin'];
     const assignedRole = allowedRoles.includes(role) ? role : 'Student';
+    const isApproved = assignedRole !== 'Teacher'; // Teachers require Admin approval
 
     const user = await User.create({
       name,
       email,
       passwordHash: password, // pre-save hook will hash this
       role: assignedRole,
+      isApproved,
     });
+
+    if (!isApproved) {
+      return res.status(201).json({
+        status: 'success',
+        pendingApproval: true,
+        message: 'Teacher registration received! Your account is pending Administrator approval before you can sign in.',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isApproved: false,
+          createdAt: user.createdAt,
+        },
+      });
+    }
 
     const token = generateToken(user._id);
 
@@ -50,6 +68,7 @@ const signup = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        isApproved: true,
         createdAt: user.createdAt,
       },
     });
@@ -78,6 +97,14 @@ const signin = async (req, res, next) => {
       return res.status(401).json({
         status: 'fail',
         message: 'Invalid email or password.',
+      });
+    }
+
+    if (user.role === 'Teacher' && user.isApproved === false) {
+      return res.status(403).json({
+        status: 'fail',
+        pendingApproval: true,
+        message: 'Your Teacher account is pending Administrator approval. Please wait for an Admin to activate your account.',
       });
     }
 
@@ -148,4 +175,84 @@ const checkAdmin = (req, res) => {
   });
 };
 
-module.exports = { signup, signin, logout, getProfile, checkAdmin };
+// @desc    Get all teacher accounts pending approval
+// @route   GET /api/v1/auth/pending-teachers
+// @access  Protected + Admin only
+const getPendingTeachers = async (req, res, next) => {
+  try {
+    const teachers = await User.find({ role: 'Teacher', isApproved: false })
+      .select('name email role isApproved createdAt')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: 'success',
+      count: teachers.length,
+      teachers,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Approve a pending teacher account
+// @route   PATCH /api/v1/auth/approve-teacher/:id
+// @access  Protected + Admin only
+const approveTeacher = async (req, res, next) => {
+  try {
+    const teacher = await User.findById(req.params.id);
+
+    if (!teacher || teacher.role !== 'Teacher') {
+      return res.status(404).json({ status: 'fail', message: 'Teacher account not found.' });
+    }
+
+    teacher.isApproved = true;
+    await teacher.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: `Teacher ${teacher.name} has been approved successfully.`,
+      teacher: {
+        id: teacher._id,
+        name: teacher.name,
+        email: teacher.email,
+        role: teacher.role,
+        isApproved: teacher.isApproved,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Reject / delete a pending teacher registration
+// @route   DELETE /api/v1/auth/reject-teacher/:id
+// @access  Protected + Admin only
+const rejectTeacher = async (req, res, next) => {
+  try {
+    const teacher = await User.findById(req.params.id);
+
+    if (!teacher || teacher.role !== 'Teacher') {
+      return res.status(404).json({ status: 'fail', message: 'Teacher account not found.' });
+    }
+
+    await teacher.deleteOne();
+
+    res.status(200).json({
+      status: 'success',
+      message: `Teacher registration for ${teacher.name} has been rejected and removed.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  signup,
+  signin,
+  logout,
+  getProfile,
+  checkAdmin,
+  getPendingTeachers,
+  approveTeacher,
+  rejectTeacher,
+};

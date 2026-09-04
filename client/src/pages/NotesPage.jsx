@@ -4,7 +4,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { getAllNotes, createNote, deleteNote } from '../services/noteService';
 import { getAllSubjects } from '../services/subjectService';
 import { summarizeNote, generateFlashcards, generateQuiz } from '../services/aiService';
-import { FileText, Plus, Trash2, X, Loader2, Brain, Sparkles, ArrowRight } from 'lucide-react';
+import { FileText, Plus, Trash2, X, Loader2, Brain, Sparkles, ArrowRight, Search } from 'lucide-react';
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -13,6 +13,7 @@ export default function NotesPage() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [aiLoading, setAiLoading] = useState('');
   const [aiResult, setAiResult] = useState(null);
   const [form, setForm] = useState({ subjectId: '', title: '', content: '', tags: '' });
@@ -83,28 +84,65 @@ export default function NotesPage() {
     }
   };
 
+  const filteredNotes = notes.filter((n) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    const titleMatch = n.title?.toLowerCase().includes(q);
+    const contentMatch = n.content?.toLowerCase().includes(q);
+    const tagsMatch = n.tags?.some((t) => t.toLowerCase().includes(q));
+    const subjectMatch = n.subjectId?.name?.toLowerCase().includes(q);
+    return titleMatch || contentMatch || tagsMatch || subjectMatch;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Study Notes</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{notes.length} note{notes.length !== 1 ? 's' : ''}</p>
+          <p className="text-gray-400 text-sm mt-0.5">
+            {filteredNotes.length} of {notes.length} note{notes.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center flex-wrap gap-3">
+          {/* Search Bar */}
+          <div className="relative w-48 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notes, tags..."
+              className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#0f172a] border border-white/15 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-blue-500 transition shadow-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-gray-400 hover:text-white transition"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <select
             value={selectedSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-blue-500 transition"
+            className="px-3.5 py-2 rounded-xl bg-[#0f172a] border border-white/15 text-white text-sm focus:outline-none focus:border-blue-500 shadow-sm transition cursor-pointer"
           >
-            <option value="">All Subjects</option>
+            <option value="" className="bg-[#0f172a] text-white">All Subjects</option>
             {subjects.map((s) => (
-              <option key={s._id} value={s._id}>{s.name}</option>
+              <option key={s._id} value={s._id} className="bg-[#0f172a] text-white">
+                {s.name} ({s.code})
+              </option>
             ))}
           </select>
+
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-btn text-white text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl gradient-btn text-white text-sm font-semibold shadow-md shadow-blue-500/20"
           >
             <Plus className="w-4 h-4" /> New Note
           </button>
@@ -118,13 +156,26 @@ export default function NotesPage() {
         <div className="lg:col-span-1 space-y-3">
           {loading ? (
             <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 text-blue-400 animate-spin" /></div>
-          ) : notes.length === 0 ? (
-            <div className="text-center py-16">
+          ) : filteredNotes.length === 0 ? (
+            <div className="text-center py-16 glass-panel rounded-2xl p-6">
               <FileText className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm">No notes yet. Create one to get started.</p>
+              {searchQuery ? (
+                <div>
+                  <p className="text-gray-300 text-sm font-medium">No notes match "{searchQuery}"</p>
+                  <p className="text-gray-500 text-xs mt-1">Try another keyword or search by tags.</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-3 text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                  >
+                    Clear Search
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No notes yet. Create one to get started.</p>
+              )}
             </div>
           ) : (
-            notes.map((note) => (
+            filteredNotes.map((note) => (
               <div
                 key={note._id}
                 onClick={() => { setSelectedNote(note); setAiResult(null); }}
@@ -259,10 +310,14 @@ export default function NotesPage() {
               <select
                 required value={form.subjectId}
                 onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg bg-[#0b0f17] border border-white/10 text-white focus:outline-none focus:border-blue-500 transition"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#0f172a] border border-white/15 text-white focus:outline-none focus:border-blue-500 transition cursor-pointer"
               >
-                <option value="">Select Subject *</option>
-                {subjects.map((s) => <option key={s._id} value={s._id}>{s.name} ({s.code})</option>)}
+                <option value="" className="bg-[#0f172a] text-white">Select Subject *</option>
+                {subjects.map((s) => (
+                  <option key={s._id} value={s._id} className="bg-[#0f172a] text-white">
+                    {s.name} ({s.code})
+                  </option>
+                ))}
               </select>
               <input
                 type="text" placeholder="Note Title *" required
