@@ -95,6 +95,8 @@ AI-Study-Notes/
 
 ## ⚙️ Installation & Setup
 
+> 🚀 **Deploying to production?** Follow our step-by-step [**Production Deployment Guide (DEPLOYMENT.md)**](DEPLOYMENT.md) for deploying to MongoDB Atlas, Render, and Vercel for free.
+
 ### Prerequisites
 - **Node.js**: `v18.x` or higher
 - **MongoDB**: Local MongoDB instance running at `mongodb://127.0.0.1:27017` or a MongoDB Atlas URI.
