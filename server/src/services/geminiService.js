@@ -29,7 +29,7 @@ Study Note:
 ${noteContent}`;
 
   const response = await genAI.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     contents: prompt,
   });
 
@@ -52,7 +52,7 @@ Generate exactly 8 cards. Study Note:
 ${noteContent}`;
 
   const response = await genAI.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     contents: prompt,
   });
 
@@ -86,7 +86,7 @@ Study Note:
 ${noteContent}`;
 
   const response = await genAI.models.generateContent({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3.6-flash',
     contents: prompt,
   });
 
